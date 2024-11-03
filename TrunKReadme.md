@@ -8,4 +8,4 @@ Author: Jason Kelly Student No. L00194486
 
 
 1. Pushing update to main demonstrating Trunk Branching
-
+2. Updadting Trunk Readme
