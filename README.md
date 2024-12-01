@@ -9,7 +9,8 @@ Author: Jason Kelly Student No. L00194486
 
 This readme is to provide a guide on the steps taken to try and best complete the Github Issues project.
 
-Steps:
+**Steps:**
+
     1. Research was carried out about Github with regards to the best practices for Github Projects, Issues, Pull Requests and Branching Strategies.
     2. Git was installed locally and a Github account was created
     3. A repository was created on Github. Issues were created in Github
