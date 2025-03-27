@@ -51,5 +51,5 @@ jobs:
         run: |
           echo "Deleting branches listed in old_branches.txt..."
           for branch in $(cat old_branches.txt | awk '{print $1}' | tail -n +2); do
-            git branch -D $branch || echo "Failed to delete branch: $branch"
+            git push origin -D $branch || echo "Failed to delete branch: $branch"
           done
