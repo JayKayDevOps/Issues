@@ -31,13 +31,13 @@ jobs:
           done
 
       - name: Create Downloadable File
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: old_branches
           path: old_branches.txt
 
       - name: Optional Delete Branches
-        if: ${{ inputs.delete_branches == 'true' }}
+        if: ${{ inputs.delete_branches == 'false' }}
         run: |
           for branch in $(cat old_branches.txt | awk '{print $1}' | tail -n +2); do
             git push origin --delete $branch || echo "Failed to delete branch: $branch"
