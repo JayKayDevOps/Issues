@@ -37,7 +37,7 @@ jobs:
           path: old_branches.txt
 
       - name: Optional Delete Branches
-        if: ${{ inputs.delete_branches == 'false' }}
+        if: ${{ inputs.delete_branches == 'true' }}
         run: |
           for branch in $(cat old_branches.txt | awk '{print $1}' | tail -n +2); do
             git push origin --delete $branch || echo "Failed to delete branch: $branch"
