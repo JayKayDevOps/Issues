@@ -1,47 +1,33 @@
 name: Find Old Branches
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight UTC
-  workflow_dispatch:  # Allows manual execution
+  workflow_dispatch:
 
 jobs:
-  find_old_branches:
+  find-old-branches:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      - name: Get Old Branches
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Git
         run: |
-          echo "Fetching branches older than 30 days..." > old_branches.txt
-          echo "" >> old_branches.txt
-          echo "Branches older than 30 days (excluding main, master, develop):" >> old_branches.txt
-          echo "-------------------------------------------------------------" >> old_branches.txt
-          
-          # Get current date in Unix timestamp
-          THIRTY_DAYS_AGO=$(date -d "30 days ago" +%s)
-          
-          # Get all branches except main, master, and develop
-          git for-each-ref --sort=committerdate --format '%(refname:short) %(committerdate:unix)' refs/remotes/origin/ | while read branch date; do
-            if [[ "$branch" != "origin/main" && "$branch" != "origin/master" && "$branch" != "origin/develop" ]]; then
-              if [[ "$date" -lt "$THIRTY_DAYS_AGO" ]]; then
-                echo "$branch (last commit: $(date -d @$date '+%Y-%m-%d'))" >> old_branches.txt
-              fi
+          git fetch --all
+
+      - name: Find Old Branches
+        run: |
+          now=$(date +%s)
+          file="old_branches.txt"
+          echo "Branches older than 30 days:" > $file
+          for branch in $(git branch -r | grep -vE 'master|main|develop' | sed 's/origin\///'); do
+            last_commit_date=$(git log -1 --format=%ct origin/$branch)
+            age_days=$(( (now - last_commit_date) / 86400 ))
+            if [ $age_days -gt 30 ]; then
+              echo "$branch (Last updated: $age_days days ago)" >> $file
             fi
           done
 
-          echo "" >> old_branches.txt
-          echo "📌 To delete these branches locally and remotely:" >> old_branches.txt
-          echo "1. Open the old_branches.txt file and review the branches." >> old_branches.txt
-          echo "2. Run the following command for each branch you want to delete:" >> old_branches.txt
-          echo "   git push origin --delete <branch-name>" >> old_branches.txt
-          echo "   git branch -D <branch-name> (optional: to remove locally)" >> old_branches.txt
-          echo "" >> old_branches.txt
-
-      - name: Upload Branch List
-        uses: actions/upload-artifact@v4
-        with:
-          name: old-branches
-          path: old_branches.txt
-          retention-days: 7  # Store the file for 7 days
+      - name: Upload Result File
+        run: |
+          cat old_branches.txt
