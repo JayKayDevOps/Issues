@@ -1,10 +1,12 @@
-name: Find Old Branches
+name: Cleanup Old Branches
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Manual trigger
+  schedule:          # Cron job trigger (runs daily at midnight)
+    - cron: "0 0 * * *"
 
 jobs:
-  find-old-branches:
+  find-and-clean-branches:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +30,15 @@ jobs:
             fi
           done
 
-      - name: Upload Result File
+      - name: Create Downloadable File
+        uses: actions/upload-artifact@v3
+        with:
+          name: old_branches
+          path: old_branches.txt
+
+      - name: Optional Delete Branches
+        if: ${{ inputs.delete_branches == 'true' }}
         run: |
-          cat old_branches.txt
+          for branch in $(cat old_branches.txt | awk '{print $1}' | tail -n +2); do
+            git push origin --delete $branch || echo "Failed to delete branch: $branch"
+          done
