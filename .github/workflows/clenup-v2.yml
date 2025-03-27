@@ -1,0 +1,55 @@
+name: Find and Cleanup Old Branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      delete_branches:
+        description: "Set to true to delete branches older than 30 days"
+        required: false
+        default: "false"
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  find-and-clean-branches:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git fetch --all
+
+      - name: Find Old Branches
+        run: |
+          now=$(date +%s)
+          file="old_branches.txt"
+          echo "Branches older than 30 days:" > $file
+          for branch in $(git branch -r | grep -vE 'master|main|develop' | sed 's/origin\///'); do
+            last_commit_date=$(git log -1 --format=%ct origin/$branch)
+            age_days=$(( (now - last_commit_date) / 86400 ))
+            if [ $age_days -gt 30 ]; then
+              echo "$branch (Last updated: $age_days days ago)" >> $file
+            fi
+          done
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: old_branches
+          path: old_branches.txt
+
+      - name: Debug Delete Flag
+        run: |
+          echo "Delete flag value: ${{ github.event.inputs.delete_branches }}"
+
+      - name: Delete Old Branches
+        # Evaluate the delete flag explicitly to avoid logic issues
+        if: ${{ github.event.inputs.delete_branches == 'true' }}
+        run: |
+          echo "Deleting branches listed in old_branches.txt..."
+          for branch in $(cat old_branches.txt | awk '{print $1}' | tail -n +2); do
+            git push origin --delete $branch || echo "Failed to delete branch: $branch"
+          done
